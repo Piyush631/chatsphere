@@ -9,9 +9,11 @@ interface users{
 const allsocket:users[]=[]
 wss.on("connection",function(socket){
     socket.on("message",(message)=>{
+    try { 
+        
         //@ts-ignore
         const parsedMessage=JSON.parse(message)
-        console.log(parsedMessage)
+     
         if(parsedMessage.type==="join")
             {
                 allsocket.push({
@@ -19,7 +21,7 @@ wss.on("connection",function(socket){
                     roomId:parsedMessage.roomId,
                     username:parsedMessage.username
                 })
-                
+                return ;
             }
 
             if(parsedMessage.type==="chat")
@@ -33,16 +35,20 @@ wss.on("connection",function(socket){
                     {
                         current=allsocket[i].roomId;
                         user=allsocket[i].username;
+                        break;
                         
                     }
                 }
-                console.log(current);
-                for(let i=0;i<allsocket.length;i++)
-                {
+                if (!current || !user) return;
+              
                     const data=JSON.stringify({
                         message:parsedMessage.message,
-                        user:user
+
+                        user:user,
+                        image:parsedMessage.image || null
                     })
+                    for(let i=0;i<allsocket.length;i++)
+                        {
                     if(allsocket[i].roomId===current)
                     {
                         
@@ -51,7 +57,19 @@ wss.on("connection",function(socket){
                         //allsocket[i].socket.send(user)
                     }
                 }
+              
             }
-        
+    }catch(err){
+        console.log("error in the statement")
+    }
     })
+    socket.on("close", () => {
+        const index = allsocket.findIndex(user => user.socket === socket);
+        if (index !== -1) {
+            allsocket.splice(index, 1); 
+           
+        }
+     
+    });
+  
 })
